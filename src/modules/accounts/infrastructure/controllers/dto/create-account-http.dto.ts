@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
+import { CreateAccountInputDto } from '../../../application/dtos/create-account-input.dto';
 
 export class CreateAccountHttpDto {
   @IsString()
@@ -12,4 +13,12 @@ export class CreateAccountHttpDto {
   @IsString()
   @IsNotEmpty({ message: 'La moneda es requerida' })
   public readonly currency: string;
+
+  public toUseCaseInput(): CreateAccountInputDto {
+    return new CreateAccountInputDto(
+      this.holderName,
+      this.initialAmount,
+      this.currency,
+    );
+  }
 }

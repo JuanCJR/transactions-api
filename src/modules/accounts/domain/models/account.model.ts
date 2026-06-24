@@ -1,4 +1,4 @@
-import { InsufficientFundsException } from '../exeptions/insufficient-funds.exception';
+import { InsufficientFundsException } from '../exceptions/insufficient-funds.exception';
 import { Money } from './money.vo';
 
 export class Account {

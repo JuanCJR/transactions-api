@@ -1,5 +1,5 @@
-import { AccountRepository } from '../../../../../../referencias/domain/repositories/account.repository';
-import { Account } from '../../../../../../referencias/domain/models/account.model';
+import { AccountRepository } from '../../domain/repositories/account.repository';
+import { Account } from '../../domain/models/account.model';
 
 export class GetAccountUseCase {
   constructor(

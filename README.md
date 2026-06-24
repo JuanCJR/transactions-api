@@ -1,98 +1,170 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Transactions API (NestJS + Clean & Hexagonal Architecture)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Este proyecto sirve como **base y plantilla de normalización** para Banco Itaú, implementando la **Arquitectura Hexagonal** bajo la estructura estándar de **Clean Architecture** (`domain`, `application`, `infrastructure`). 
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+El objetivo principal es lograr un desacoplamiento completo de las reglas de negocio respecto a las tecnologías y frameworks (como NestJS o bases de datos específicas), facilitando la testabilidad, mantenimiento e independencia tecnológica.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 1. Estructura del Proyecto
 
-## Project setup
+El código de negocio se organiza modularmente en `src/modules/accounts/` bajo las siguientes capas:
 
-```bash
-$ npm install
+```text
+src/modules/accounts/
+├── domain/                  # 1. Capa de Dominio (Reglas de negocio puras)
+│   ├── models/              # Entidades y Value Objects (ej. Account, Money)
+│   ├── exceptions/          # Excepciones específicas de negocio (ej. InsufficientFundsException, CreditScoreTooLowException)
+│   ├── ports/               # Puertos técnicos puros (ej. LoggerPort, AppConfig, CreditBureauPort)
+│   └── repositories/        # Puertos de salida especializados en BD (ej. AccountRepository)
+│
+├── application/             # 2. Capa de Aplicación (Casos de uso / Orquestación)
+│   ├── dtos/                # Data Transfer Objects puros (parámetros de entrada de casos de uso)
+│   └── use-cases/           # Flujos de negocio concretos (ej. TransferUseCase, CreateAccountUseCase)
+│
+└── infrastructure/          # 3. Capa de Infraestructura (Adaptadores y Framework)
+    ├── controllers/         # Adaptadores de entrada (Controladores HTTP, DTOs de validación web)
+    ├── database/            # Adaptadores de salida de persistencia (InMemory, ORMs, etc.)
+    ├── http-clients/        # Adaptadores de salida para APIs externas (ej. MockCreditBureauAdapter)
+    ├── logger/              # Adaptadores de salida técnicos (Loggers de NestJS)
+    ├── config/              # Adaptadores de salida técnicos (Configuración de NestJS)
+    ├── filters/             # Filtros de excepciones para traducir errores de dominio a HTTP
+    └── accounts.module.ts   # Configuración de Inyección de Dependencias de NestJS
 ```
 
-## Compile and run the project
+---
 
+## 2. Responsabilidades y Explicación de Archivos
+
+### 📂 1. Capa de Dominio (`domain`)
+Contiene las reglas de negocio de la empresa. **Es 100% puro TypeScript** y no tiene importaciones de NestJS ni de librerías externas.
+
+*   📄 **`models/money.vo.ts` (Value Object)**
+    *   *Propósito*: Encapsula el comportamiento del dinero (cantidad y moneda). Es **inmutable** (retorna siempre una nueva instancia en operaciones matemáticas) para evitar mutaciones accidentales en memoria.
+*   📄 **`models/account.model.ts` (Entity)**
+    *   *Propósito*: Entidad de negocio de cuenta bancaria. Mantiene el estado del saldo bancario y encapsula las reglas de modificación de saldo mediante sus métodos `.deposit()` y `.withdraw()`.
+*   📄 **`exceptions/insufficient-funds.exception.ts`**
+    *   *Propósito*: Excepción nativa de negocio arrojada cuando una cuenta no tiene fondos suficientes.
+*   📄 **`exceptions/credit-score-too-low.exception.ts`**
+    *   *Propósito*: Excepción de negocio arrojada cuando un titular no califica para abrir una cuenta corriente debido a un historial financiero deficiente.
+*   📄 **`ports/credit-bureau.port.ts` (Outbound Port)**
+    *   *Propósito*: Puerto de salida que define la firma requerida para conectarse con un buró de crédito externo (ej: Equifax/Dicom).
+*   📄 **`repositories/account.repository.ts` (Outbound Port)**
+    *   *Propósito*: Clase abstracta que define las firmas obligatorias de persistencia que el dominio/aplicación necesitan para operar con cuentas.
+
+---
+
+### 📂 2. Capa de Aplicación (`application`)
+Orquesta el flujo de datos entre el usuario (a través de infraestructura) y las entidades del dominio. **Es 100% puro TypeScript**.
+
+*   📄 **`dtos/create-account-input.dto.ts` & `transfer-input.dto.ts`**
+    *   *Propósito*: Estructuras de datos puras que el caso de uso requiere como entrada. No contienen decoradores HTTP.
+*   📄 **`use-cases/create-account.use-case.ts`**
+    *   *Propósito*: Caso de uso para crear una cuenta. Antes de crearla, consulta el score al puerto `CreditBureauPort` para validar la viabilidad del cliente.
+*   📄 **`use-cases/get-account.use-case.ts`**
+    *   *Propósito*: Caso de uso concreto para consultar los detalles y saldo de una cuenta.
+*   📄 **`use-cases/transfer.use-case.ts`**
+    *   *Propósito*: Caso de uso que orquesta el retiro de saldo en origen, depósito en destino y persistencia secuencial. Inyecta abstracciones (`AccountRepository`, `LoggerPort`, `AppConfig`) para aislar la lógica de límites técnicos y registros.
+
+---
+
+### 📂 3. Capa de Infraestructura (`infrastructure`)
+Detalles de implementación del sistema. Contiene las dependencias del framework NestJS y librerías externas.
+
+*   📄 **`controllers/account.controller.ts` (Primary Adapter)**
+    *   *Propósito*: Recibe peticiones REST HTTP, valida las entradas mapeando de DTOs HTTP a DTOs de aplicación, ejecuta el caso de uso adecuado y formatea la respuesta JSON final.
+*   📄 **`controllers/dto/`**
+    *   *Propósito*: DTOs con decoradores de validación de `class-validator` (ej. `@IsString()`, `@Min()`) para asegurar el formato de entrada HTTP.
+*   📄 **`database/in-memory-account.repository.ts` (Secondary Adapter)**
+    *   *Propósito*: Implementa la clase abstracta `AccountRepository`. Almacena y lee datos de una base de datos virtual simulada por un `Map`.
+*   📄 **`http-clients/mock-credit-bureau.adapter.ts` (Secondary Adapter)**
+    *   *Propósito*: Adaptador que implementa el puerto `CreditBureauPort` simulando una consulta REST a la API de Equifax/Dicom para validar historiales crediticios.
+*   📄 **`logger/nest-logger.adapter.ts` (Secondary Adapter)**
+    *   *Propósito*: Implementa el puerto de logs utilizando la clase interna `Logger` de NestJS.
+*   📄 **`config/nest-config.adapter.ts` (Secondary Adapter)**
+    *   *Propósito*: Implementa la configuración del límite de transferencia leyendo variables de entorno.
+*   📄 **`filters/domain-exception.filter.ts`**
+    *   *Propósito*: Interceptor global que detecta excepciones de negocio (como `InsufficientFundsException` y `CreditScoreTooLowException`) y las traduce a respuestas estructuradas con códigos HTTP adecuados (como `422` o `400`).
+*   📄 **`accounts.module.ts`**
+    *   *Propósito*: Configura el contenedor de inyección de dependencias (IoC Container) de NestJS. Dado que los casos de uso son clases puras sin decoradores `@Injectable()`, aquí se usa `useFactory` e `inject` para cablearlos y mantener la pureza de la arquitectura.
+
+---
+
+## 3. Instalación del Proyecto
+
+Instala las dependencias del framework:
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
-
+Para asegurar las validaciones decoradas de los DTOs de entrada HTTP:
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install class-validator class-transformer
 ```
 
-## Deployment
+---
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## 4. Ejecución
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Modo desarrollo con auto-recarga (watch mode)
+npm run start:dev
+
+# Construcción de TypeScript para validación
+npm run build
+
+# Ejecución de Pruebas Unitarias
+npm run test
+
+# Ejecución de Pruebas E2E
+npm run test:e2e
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+---
 
-## Resources
+## 5. Ejemplos de Pruebas de API (cURL)
 
-Check out a few resources that may come in handy when working with NestJS:
+### A. Crear Cuenta A (Diego Maradona - Califica Aprobado)
+```bash
+curl -X POST http://localhost:3000/accounts \
+  -H "Content-Type: application/json" \
+  -d '{"holderName": "Diego Maradona", "initialAmount": 500000, "currency": "CLP"}'
+```
+*Retornará el ID generado de la Cuenta A (ej: `A1B2C3D`).*
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### B. Crear Cuenta B (Lionel Messi - Califica Aprobado)
+```bash
+curl -X POST http://localhost:3000/accounts \
+  -H "Content-Type: application/json" \
+  -d '{"holderName": "Lionel Messi", "initialAmount": 10000, "currency": "CLP"}'
+```
+*Retornará el ID generado de la Cuenta B (ej: `X9Y8Z7W`).*
 
-## Support
+### C. Intentar Crear Cuenta para Titular Moroso (Rechazado, retorna 400 BadRequest)
+La simulación rechaza a cualquier titular con el término "moroso" o "deudor" en su nombre:
+```bash
+curl -X POST http://localhost:3000/accounts \
+  -H "Content-Type: application/json" \
+  -d '{"holderName": "Jorge Moroso Valenzuela", "initialAmount": 50000, "currency": "CLP"}'
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### D. Consultar saldo inicial de Cuenta A
+```bash
+curl http://localhost:3000/accounts/A1B2C3D
+```
 
-## Stay in touch
+### E. Intentar Transferencia Excediendo el Límite de Infraestructura (Retorna 400)
+El límite por defecto en `NestConfigAdapter` es `$100.000 CLP`. Intentamos transferir `$150.000`:
+```bash
+curl -X POST http://localhost:3000/accounts/transfer \
+  -H "Content-Type: application/json" \
+  -d '{"fromAccountId": "A1B2C3D", "toAccountId": "X9Y8Z7W", "amount": 150000, "currency": "CLP"}'
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### F. Intentar Transferencia Excediendo los Fondos del Dominio (Retorna 422)
+Intentamos transferir `$80.000` (si la cuenta sólo posee `$50.000` de saldo disponible):
+```bash
+curl -X POST http://localhost:3000/accounts/transfer \
+  -H "Content-Type: application/json" \
+  -d '{"fromAccountId": "A1B2C3D", "toAccountId": "X9Y8Z7W", "amount": 80000, "currency": "CLP"}'
+```
