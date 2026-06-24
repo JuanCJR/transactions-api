@@ -65,7 +65,21 @@ describe('Accounts (e2e)', () => {
       .expect(400);
 
     expect(response.body.errorCode).toBe('CREDIT_SCORE_TOO_LOW');
-    expect(response.body.message).toContain('no califica para abrir una cuenta debido a un score crediticio bajo');
+    expect(response.body.message).toContain('no califica para abrir una cuenta. Score:');
+  });
+
+  it('debería rechazar la creación si el cliente tiene deudas activas (POST /accounts)', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/accounts')
+      .send({
+        holderName: 'Juan Moroso',
+        initialAmount: 50000,
+        currency: 'CLP',
+      })
+      .expect(400);
+
+    expect(response.body.errorCode).toBe('CREDIT_SCORE_TOO_LOW');
+    expect(response.body.message).toContain('Deudas Activas: SÍ');
   });
 
   afterEach(async () => {

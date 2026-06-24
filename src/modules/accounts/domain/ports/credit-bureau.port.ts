@@ -1,3 +1,5 @@
+import { CreditReport } from '../models/credit-report.model';
+
 export abstract class CreditBureauPort {
-  abstract getCreditScore(holderName: string): Promise<number>;
+  abstract getCreditReport(holderName: string): Promise<CreditReport>;
 }

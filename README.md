@@ -13,7 +13,7 @@ El código de negocio se organiza modularmente en `src/modules/accounts/` bajo l
 ```text
 src/modules/accounts/
 ├── domain/                  # 1. Capa de Dominio (Reglas de negocio puras)
-│   ├── models/              # Entidades y Value Objects (ej. Account, Money)
+│   ├── models/              # Entidades, Value Objects y Modelos de dominio (ej. Account, Money, CreditReport)
 │   ├── exceptions/          # Excepciones específicas de negocio (ej. InsufficientFundsException, CreditScoreTooLowException)
 │   ├── ports/               # Puertos técnicos puros (ej. LoggerPort, AppConfig, CreditBureauPort)
 │   └── repositories/        # Puertos de salida especializados en BD (ej. AccountRepository)
@@ -41,6 +41,8 @@ Contiene las reglas de negocio de la empresa. **Es 100% puro TypeScript** y no t
 
 *   📄 **`models/money.vo.ts` (Value Object)**
     *   *Propósito*: Encapsula el comportamiento del dinero (cantidad y moneda). Es **inmutable** (retorna siempre una nueva instancia en operaciones matemáticas) para evitar mutaciones accidentales en memoria.
+*   📄 **`models/credit-report.model.ts` (Domain Model)**
+    *   *Propósito*: Modelo del dominio puro que unifica y encapsula los datos requeridos sobre el perfil de crédito de un cliente (score, categoría de riesgo, deudas activas).
 *   📄 **`models/account.model.ts` (Entity)**
     *   *Propósito*: Entidad de negocio de cuenta bancaria. Mantiene el estado del saldo bancario y encapsula las reglas de modificación de saldo mediante sus métodos `.deposit()` y `.withdraw()`.
 *   📄 **`exceptions/insufficient-funds.exception.ts`**

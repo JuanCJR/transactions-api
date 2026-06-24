@@ -34,27 +34,39 @@ Content-Type: application/json
 @messiAccountId = {{createAccountMessi.response.body.id}}
 
 
-### 3. Intentar Crear Cuenta para un Deudor (Rechazado, retorna 400)
-# @name createAccountDeudor
+### 3. Intentar Crear Cuenta - Rechazado por Score Crediticio Bajo (Retorna 400)
+# @name createAccountBajoScore
 POST {{baseUrl}}/accounts
 Content-Type: application/json
 
 {
-  "holderName": "Juan Deudor Moroso",
+  "holderName": "Juan Deudor",
   "initialAmount": 50000,
   "currency": "CLP"
 }
 
 
-### 4. Consultar saldo inicial de Cuenta A (Diego)
+### 4. Intentar Crear Cuenta - Rechazado por Deudas Activas Vigentes (Retorna 400)
+# @name createAccountConDeudas
+POST {{baseUrl}}/accounts
+Content-Type: application/json
+
+{
+  "holderName": "Carlos Moroso",
+  "initialAmount": 50000,
+  "currency": "CLP"
+}
+
+
+### 5. Consultar saldo inicial de Cuenta A (Diego)
 GET {{baseUrl}}/accounts/{{diegoAccountId}}
 
 
-### 5. Consultar saldo inicial de Cuenta B (Messi)
+### 6. Consultar saldo inicial de Cuenta B (Messi)
 GET {{baseUrl}}/accounts/{{messiAccountId}}
 
 
-### 6. Transferencia Exitosa (Diego -> Messi: $50.000 CLP)
+### 7. Transferencia Exitosa (Diego -> Messi: $50.000 CLP)
 POST {{baseUrl}}/accounts/transfer
 Content-Type: application/json
 
@@ -66,15 +78,15 @@ Content-Type: application/json
 }
 
 
-### 7. Consultar saldo final de Cuenta A (Debería tener $450.000 CLP)
+### 8. Consultar saldo final de Cuenta A (Debería tener $450.000 CLP)
 GET {{baseUrl}}/accounts/{{diegoAccountId}}
 
 
-### 8. Consultar saldo final de Cuenta B (Debería tener $60.000 CLP)
+### 9. Consultar saldo final de Cuenta B (Debería tener $60.000 CLP)
 GET {{baseUrl}}/accounts/{{messiAccountId}}
 
 
-### 9. Intentar Transferencia Excediendo Límite de Infraestructura ($150.000 CLP, retorna 400)
+### 10. Intentar Transferencia Excediendo Límite de Infraestructura ($150.000 CLP, retorna 400)
 POST {{baseUrl}}/accounts/transfer
 Content-Type: application/json
 
@@ -86,7 +98,7 @@ Content-Type: application/json
 }
 
 
-### 10. Intentar Transferencia Excediendo el Saldo del Dominio (retorna 422)
+### 11. Intentar Transferencia Excediendo el Saldo del Dominio (retorna 422)
 # Hacemos una transferencia por $80.000 CLP sobre el saldo disponible de Messi ($60.000 CLP)
 POST {{baseUrl}}/accounts/transfer
 Content-Type: application/json
