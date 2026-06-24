@@ -1,0 +1,99 @@
+@baseUrl = http://localhost:3000
+
+### 1. Crear Cuenta A (Diego Maradona - Califica Aprobado)
+# @name createAccountDiego
+POST {{baseUrl}}/accounts
+Content-Type: application/json
+
+{
+  "holderName": "Diego Maradona",
+  "initialAmount": 500000,
+  "currency": "CLP"
+}
+
+###
+
+# Guardamos el ID retornado por la creación de Diego en una variable
+@diegoAccountId = {{createAccountDiego.response.body.id}}
+
+
+### 2. Crear Cuenta B (Lionel Messi - Califica Aprobado)
+# @name createAccountMessi
+POST {{baseUrl}}/accounts
+Content-Type: application/json
+
+{
+  "holderName": "Lionel Messi",
+  "initialAmount": 10000,
+  "currency": "CLP"
+}
+
+###
+
+# Guardamos el ID retornado por la creación de Messi en una variable
+@messiAccountId = {{createAccountMessi.response.body.id}}
+
+
+### 3. Intentar Crear Cuenta para un Deudor (Rechazado, retorna 400)
+# @name createAccountDeudor
+POST {{baseUrl}}/accounts
+Content-Type: application/json
+
+{
+  "holderName": "Juan Deudor Moroso",
+  "initialAmount": 50000,
+  "currency": "CLP"
+}
+
+
+### 4. Consultar saldo inicial de Cuenta A (Diego)
+GET {{baseUrl}}/accounts/{{diegoAccountId}}
+
+
+### 5. Consultar saldo inicial de Cuenta B (Messi)
+GET {{baseUrl}}/accounts/{{messiAccountId}}
+
+
+### 6. Transferencia Exitosa (Diego -> Messi: $50.000 CLP)
+POST {{baseUrl}}/accounts/transfer
+Content-Type: application/json
+
+{
+  "fromAccountId": "{{diegoAccountId}}",
+  "toAccountId": "{{messiAccountId}}",
+  "amount": 50000,
+  "currency": "CLP"
+}
+
+
+### 7. Consultar saldo final de Cuenta A (Debería tener $450.000 CLP)
+GET {{baseUrl}}/accounts/{{diegoAccountId}}
+
+
+### 8. Consultar saldo final de Cuenta B (Debería tener $60.000 CLP)
+GET {{baseUrl}}/accounts/{{messiAccountId}}
+
+
+### 9. Intentar Transferencia Excediendo Límite de Infraestructura ($150.000 CLP, retorna 400)
+POST {{baseUrl}}/accounts/transfer
+Content-Type: application/json
+
+{
+  "fromAccountId": "{{diegoAccountId}}",
+  "toAccountId": "{{messiAccountId}}",
+  "amount": 150000,
+  "currency": "CLP"
+}
+
+
+### 10. Intentar Transferencia Excediendo el Saldo del Dominio (retorna 422)
+# Hacemos una transferencia por $80.000 CLP sobre el saldo disponible de Messi ($60.000 CLP)
+POST {{baseUrl}}/accounts/transfer
+Content-Type: application/json
+
+{
+  "fromAccountId": "{{messiAccountId}}",
+  "toAccountId": "{{diegoAccountId}}",
+  "amount": 80000,
+  "currency": "CLP"
+}
