@@ -1,6 +1,6 @@
 import { CreateAccountUseCase } from '../../ports/inbound/create-account.use-case';
-import { Account } from '../models/account.model';
-import { Money } from '../models/money.vo';
+import { Account } from '../../domain/models/account.model';
+import { Money } from '../../domain/models/money.vo';
 import { AccountRepositoryPort } from '../../ports/outbound/account.repository.port';
 
 export class CreateAccountService implements CreateAccountUseCase {

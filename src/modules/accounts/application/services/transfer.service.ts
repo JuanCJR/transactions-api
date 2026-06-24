@@ -1,5 +1,5 @@
 import { TransferUseCase } from '../../ports/inbound/transfer.use-case';
-import { Money } from '../models/money.vo';
+import { Money } from '../../domain/models/money.vo';
 import { AccountRepositoryPort } from '../../ports/outbound/account.repository.port';
 
 export class TransferService implements TransferUseCase {
